@@ -6,8 +6,8 @@ let
 
   stack2nixSrc = builtins.fetchTarball {
     # my fork of stack2nix that has the required patches for running in nix-build
-    url = "https://github.com/cdepillabout/stack2nix/archive/f5e7da91cfa70b8f20324f52b2d9efa22e801a53.tar.gz";
-    sha256 = "1wnbklxjqcsryn6cwm82f2rcmgrhdw1853ym2ck12jkn2ggpwmpx";
+    url = "https://github.com/cdepillabout/stack2nix/archive/3ba91639c62a3183877ec11721a25f0936a93148.tar.gz";
+    sha256 = "sha256:0qc3hfnxvb4vplm4vdv1h9hf8j5608g3zgwvd1dmy3rrrfh9pzip";
   };
 
   myStack2nix = import stack2nixSrc {};
@@ -50,7 +50,6 @@ let
     , doBenchmark ? false
     }:
     assert builtins.isString hackageSnapshotTimestamp;
-    assert (isNull name || builtins.isString name);
     stdenv.mkDerivation {
       name = "stack2nix${if isNull name then "" else "-for-" + name}.nix";
 
@@ -123,9 +122,15 @@ let
 
   callStack2nixPkgSet =
     { pkgs ? myPkgs
-    , compiler
+    , haskellPackagesCompiler
     , ...
     }@args:
-    import (callStack2nix (builtins.removeAttrs args ["pkgs"])) { inherit pkgs compiler; };
+    let
+      callStack2nixArgs =
+        builtins.removeAttrs args ["pkgs" "haskellPackagesCompiler"] // {
+          compiler = haskellPackagesCompiler.ghc;
+        };
+    in
+    import (callStack2nix callStack2nixArgs) { inherit pkgs; compiler = haskellPackagesCompiler; };
 
-in { inherit callStack2nix callStack2nixPkgSet; }
+in { inherit callStack2nix callStack2nixPkgSet; stack2nix = myStack2nix; }
