@@ -1,16 +1,16 @@
 { pkgs ? (import <nixpkgs> {})
 }:
 
-with pkgs;
-
 let
+  myPkgs = pkgs;
+
   stack2nixSrc = builtins.fetchTarball {
     # my fork of stack2nix that has the required patches for running in nix-build
     url = "https://github.com/cdepillabout/stack2nix/archive/f5e7da91cfa70b8f20324f52b2d9efa22e801a53.tar.gz";
     sha256 = "1wnbklxjqcsryn6cwm82f2rcmgrhdw1853ym2ck12jkn2ggpwmpx";
   };
 
-  stack2nix = import stack2nixSrc {};
+  myStack2nix = import stack2nixSrc {};
 
   callStack2nix =
     { src
@@ -35,9 +35,9 @@ let
     # TODO: It should be possible to use stack2nix to automatically
     # figure out the GHC version used by the project without the user
     # needing to specify it.
-    , ghc
+    , compiler
     , name ? null
-    , stack2nix ? stack2nix
+    , stack2nix ? myStack2nix
     , cabal-install ? pkgs.cabal-install
     , lib ? pkgs.lib
     , stdenv ? pkgs.stdenv
@@ -57,7 +57,7 @@ let
       nativeBuildInputs = [
         cabal-install
         cacert
-        ghc
+        compiler
         git
         iana-etc
         libredirect
@@ -122,9 +122,10 @@ let
     };
 
   callStack2nixPkgSet =
-    { pkgs ? pkgs
+    { pkgs ? myPkgs
+    , compiler
     , ...
     }@args:
-    import (callStack2nix (builtins.removeAttrs args ["pkgs"])) { inherit pkgs; };
+    import (callStack2nix (builtins.removeAttrs args ["pkgs"])) { inherit pkgs compiler; };
 
 in { inherit callStack2nix callStack2nixPkgSet; }
