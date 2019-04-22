@@ -1,7 +1,7 @@
-{ pkgs ? <nixpkgs>
+{ pkgs ? (import <nixpkgs> {})
 }:
 
-with (import pkgs {});
+with pkgs;
 
 let
   stack2nixSrc = builtins.fetchTarball {
